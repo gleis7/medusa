@@ -1,15 +1,37 @@
-import { FulfillmentTypes, IFulfillmentModuleService, } from "@medusajs/framework/types"
+import type {
+  FulfillmentTypes,
+  IFulfillmentModuleService,
+} from "@medusajs/framework/types"
 import { Modules } from "@medusajs/framework/utils"
 import { createStep, StepResponse } from "@medusajs/framework/workflows-sdk"
+
+/**
+ * The shipping option types to create.
+ */
+export type CreateShippingOptionTypesStepInput =
+  FulfillmentTypes.CreateShippingOptionTypeDTO[]
 
 export const createShippingOptionTypesStepId = "create-shipping-option-types"
 /**
  * This step creates one or more shipping option types.
+ *
+ * @since 2.10.0
+ *
+ * @example
+ * const shippingOptionTypes = createShippingOptionTypesStep([
+ *   {
+ *     label: "Standard",
+ *     code: "standard",
+ *     description: "Ship in 2-3 days."
+ *   }
+ * ])
  */
 export const createShippingOptionTypesStep = createStep(
   createShippingOptionTypesStepId,
-  async (data: FulfillmentTypes.CreateShippingOptionTypeDTO[], { container }) => {
-    const service = container.resolve<IFulfillmentModuleService>(Modules.FULFILLMENT)
+  async (data: CreateShippingOptionTypesStepInput, { container }) => {
+    const service = container.resolve<IFulfillmentModuleService>(
+      Modules.FULFILLMENT
+    )
 
     const created = await service.createShippingOptionTypes(data)
     return new StepResponse(
@@ -22,7 +44,9 @@ export const createShippingOptionTypesStep = createStep(
       return
     }
 
-    const service = container.resolve<IFulfillmentModuleService>(Modules.FULFILLMENT)
+    const service = container.resolve<IFulfillmentModuleService>(
+      Modules.FULFILLMENT
+    )
 
     await service.deleteShippingOptionTypes(createdIds)
   }

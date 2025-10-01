@@ -19,6 +19,7 @@ import {
 } from "@medusajs/framework/workflows-sdk"
 import { emitEventStep, useQueryGraphStep } from "../../common"
 import { deleteLineItemsStep } from "../../line-item"
+import { acquireLockStep, releaseLockStep } from "../../locking"
 import {
   findOrCreateCustomerStep,
   findSalesChannelStep,
@@ -78,8 +79,17 @@ export const updateCartWorkflowId = "update-cart"
  * @property hooks.cartUpdated - This hook is executed after a cart is update. You can consume this hook to perform custom actions on the updated cart.
  */
 export const updateCartWorkflow = createWorkflow(
-  updateCartWorkflowId,
+  {
+    name: updateCartWorkflowId,
+    idempotent: false,
+  },
   (input: WorkflowData<UpdateCartWorkflowInput>) => {
+    acquireLockStep({
+      key: input.id,
+      timeout: 2,
+      ttl: 10,
+    })
+
     const { data: cartToUpdate } = useQueryGraphStep({
       entity: "cart",
       filters: { id: input.id },
@@ -138,6 +148,9 @@ export const updateCartWorkflow = createWorkflow(
         options: {
           throwIfKeyNotFound: true,
           isList: false,
+          cache: {
+            enable: true,
+          },
         },
       }).config({ name: "get-region" })
 
@@ -298,12 +311,17 @@ export const updateCartWorkflow = createWorkflow(
         cart_id: cartInput.id,
         promo_codes: input.promo_codes,
         force_refresh: !!newRegion,
+        additional_data: input.additional_data,
       },
     })
 
     const cartUpdated = createHook("cartUpdated", {
       cart,
       additional_data: input.additional_data,
+    })
+
+    releaseLockStep({
+      key: input.id,
     })
 
     return new WorkflowResponse(void 0, {

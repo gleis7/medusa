@@ -17,7 +17,7 @@ import {
   ContainerRegistrationKeys,
   createMedusaContainer,
   defineJoinerConfig,
-  discoverFeatureFlagsFromDir,
+  discoverAndRegisterFeatureFlags,
   DmlEntity,
   dynamicImport,
   FeatureFlag,
@@ -28,11 +28,10 @@ import {
   MedusaModuleType,
   Modules,
   ModulesSdkUtils,
-  registerFeatureFlag,
   stringifyCircular,
   toMikroOrmEntities,
 } from "@medusajs/utils"
-import { asFunction, asValue } from "awilix"
+import { asFunction, asValue } from "@medusajs/deps/awilix"
 import { statSync } from "fs"
 import { readdir } from "fs/promises"
 import { dirname, join, resolve } from "path"
@@ -232,7 +231,8 @@ export async function loadInternalModule(args: {
     ContainerRegistrationKeys.CONFIG_MODULE,
     ContainerRegistrationKeys.LOGGER,
     ContainerRegistrationKeys.PG_CONNECTION,
-    Modules.EVENT_BUS
+    Modules.EVENT_BUS,
+    Modules.CACHING
   )
 
   for (const dependency of dependencies) {
@@ -579,7 +579,6 @@ export async function loadResources({
     }
 
     const flagDir = resolve(normalizedPath)
-    const discovered = await discoverFeatureFlagsFromDir(flagDir, 1)
 
     const configModule = container.resolve(
       ContainerRegistrationKeys.CONFIG_MODULE,
@@ -588,14 +587,13 @@ export async function loadResources({
       }
     ) as ConfigModule
 
-    for (const def of discovered) {
-      registerFeatureFlag({
-        flag: def,
-        projectConfigFlags: configModule?.featureFlags ?? {},
-        router: FeatureFlag,
-        logger,
-      })
-    }
+    await discoverAndRegisterFeatureFlags({
+      flagDir,
+      projectConfigFlags: configModule?.featureFlags ?? {},
+      router: FeatureFlag,
+      logger,
+      maxDepth: 1,
+    })
 
     const [moduleService, services, models, repositories] = await Promise.all([
       dynamicImport(modulePath).then((moduleExports) => {

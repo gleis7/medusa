@@ -1184,6 +1184,60 @@ export function getRouteMap({
                   ],
                 },
                 {
+                  path: "shipping-option-types",
+                  errorElement: <ErrorBoundary />,
+                  element: <Outlet />,
+                  handle: {
+                    breadcrumb: () => t("shippingOptionTypes.domain"),
+                  },
+                  children: [
+                    {
+                      path: "",
+                      lazy: () =>
+                        import(
+                          "../../routes/shipping-option-types/shipping-option-type-list"
+                        ),
+                      children: [
+                        {
+                          path: "create",
+                          lazy: () =>
+                            import(
+                              "../../routes/shipping-option-types/shipping-option-type-create"
+                            ),
+                        },
+                      ],
+                    },
+                    {
+                      path: ":id",
+                      lazy: async () => {
+                        const { Component, Breadcrumb, loader } = await import(
+                          "../../routes/shipping-option-types/shipping-option-type-detail"
+                        )
+
+                        return {
+                          Component,
+                          loader,
+                          handle: {
+                            breadcrumb: (
+                              // eslint-disable-next-line max-len
+                              match: UIMatch<HttpTypes.AdminShippingOptionTypeResponse>
+                            ) => <Breadcrumb {...match} />,
+                          },
+                        }
+                      },
+                      children: [
+                        {
+                          path: "edit",
+                          lazy: () =>
+                            import(
+                              "../../routes/shipping-option-types/shipping-option-type-edit"
+                            ),
+                        },
+                      ],
+                    },
+                  ],
+                },
+                {
                   path: ":location_id",
                   lazy: async () => {
                     const { Component, Breadcrumb, loader } = await import(
@@ -1373,59 +1427,6 @@ export function getRouteMap({
                       },
                     }
                   },
-                },
-              ],
-            },
-            {
-              path: "shipping-option-types",
-              errorElement: <ErrorBoundary />,
-              element: <Outlet />,
-              handle: {
-                breadcrumb: () => t("shippingOptionTypes.domain"),
-              },
-              children: [
-                {
-                  path: "",
-                  lazy: () =>
-                    import(
-                      "../../routes/shipping-option-types/shipping-option-type-list"
-                    ),
-                  children: [
-                    {
-                      path: "create",
-                      lazy: () =>
-                        import(
-                          "../../routes/shipping-option-types/shipping-option-type-create"
-                        ),
-                    },
-                  ],
-                },
-                {
-                  path: ":id",
-                  lazy: async () => {
-                    const { Component, Breadcrumb, loader } = await import(
-                      "../../routes/shipping-option-types/shipping-option-type-detail"
-                    )
-
-                    return {
-                      Component,
-                      loader,
-                      handle: {
-                        breadcrumb: (
-                          match: UIMatch<HttpTypes.AdminShippingOptionTypeResponse>
-                        ) => <Breadcrumb {...match} />,
-                      },
-                    }
-                  },
-                  children: [
-                    {
-                      path: "edit",
-                      lazy: () =>
-                        import(
-                          "../../routes/shipping-option-types/shipping-option-type-edit"
-                        ),
-                    },
-                  ],
                 },
               ],
             },
@@ -1771,6 +1772,42 @@ export function getRouteMap({
                           lazy: () =>
                             import(
                               "../../routes/return-reasons/return-reason-edit"
+                            ),
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              path: "refund-reasons",
+              element: <Outlet />,
+              handle: {
+                breadcrumb: () => t("refundReasons.domain"),
+              },
+              children: [
+                {
+                  path: "",
+                  lazy: () =>
+                    import("../../routes/refund-reasons/refund-reason-list"),
+                  children: [
+                    {
+                      path: "create",
+                      lazy: () =>
+                        import(
+                          "../../routes/refund-reasons/refund-reason-create"
+                        ),
+                    },
+
+                    {
+                      path: ":id",
+                      children: [
+                        {
+                          path: "edit",
+                          lazy: () =>
+                            import(
+                              "../../routes/refund-reasons/refund-reason-edit"
                             ),
                         },
                       ],

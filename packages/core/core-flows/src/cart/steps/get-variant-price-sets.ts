@@ -1,4 +1,4 @@
-import { Query } from "@medusajs/framework"
+import { MedusaContainer, Query } from "@medusajs/framework"
 import {
   CalculatedPriceSet,
   IPricingModuleService,
@@ -26,9 +26,25 @@ export interface GetVariantPriceSetsStepInput {
   context?: Record<string, unknown>
 }
 
+/**
+ * The details of the variants to get price sets for.
+ */
 export interface GetVariantPriceSetsStepBulkInput {
+  /**
+   * The variants to get price sets for.
+   */
   data: {
+    /**
+     * The ID of the item.
+     */
+    id?: string
+    /**
+     * The ID of the variant to get the price set for.
+     */
     variantId: string
+    /**
+     * The context to use when calculating the price set.
+     */
     context?: Record<string, unknown>
   }[]
 }
@@ -39,6 +55,10 @@ interface VariantPriceSetData {
 }
 
 interface PriceCalculationItem {
+  /**
+   * The ID of the item. In case of variants we wont have an item id
+   */
+  id?: string
   variantId: string
   priceSetId: string
   context?: Record<string, unknown>
@@ -55,11 +75,18 @@ async function fetchVariantPriceSets(
   variantIds: string[]
 ): Promise<VariantPriceSetData[]> {
   return (
-    await query.graph({
-      entity: "variant",
-      fields: ["id", "price_set.id"],
-      filters: { id: variantIds },
-    })
+    await query.graph(
+      {
+        entity: "variant",
+        fields: ["id", "price_set.id"],
+        filters: { id: variantIds },
+      },
+      {
+        cache: {
+          enable: true,
+        },
+      }
+    )
   ).data
 }
 
@@ -88,7 +115,8 @@ function validateVariantPriceSets(
  */
 async function processVariantPriceSets(
   pricingService: IPricingModuleService,
-  items: PriceCalculationItem[]
+  items: PriceCalculationItem[],
+  container: MedusaContainer
 ): Promise<GetVariantPriceSetsStepOutput> {
   const result: GetVariantPriceSetsStepOutput = {}
 
@@ -112,7 +140,7 @@ async function processVariantPriceSets(
     for (const item of groupItems) {
       const calculatedPriceSet = priceSetMap.get(item.priceSetId)
       if (calculatedPriceSet) {
-        result[item.variantId] = calculatedPriceSet
+        result[item.id ?? item.variantId] = calculatedPriceSet
       }
     }
   }
@@ -184,6 +212,7 @@ function createCalculationItemsFromBulkData(
     const priceSetId = variantToPriceSetId.get(item.variantId)
     if (priceSetId) {
       calculationItems.push({
+        id: item.id,
         variantId: item.variantId,
         priceSetId,
         context: item.context,
@@ -277,7 +306,8 @@ export const getVariantPriceSetsStep = createStep(
     // Use unified processing logic for both input types
     const result = await processVariantPriceSets(
       pricingModuleService,
-      calculationItems
+      calculationItems,
+      container
     )
 
     return new StepResponse(result)

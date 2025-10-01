@@ -1,4 +1,4 @@
-import { OrderChangeDTO, OrderDTO } from "@medusajs/framework/types"
+import type { OrderChangeDTO, OrderDTO } from "@medusajs/framework/types"
 import {
   ChangeActionType,
   OrderChangeStatus,
@@ -17,7 +17,6 @@ import {
   throwIfIsCancelled,
   throwIfOrderChangeIsNotActive,
 } from "../../utils/order-validation"
-import { refreshOrderEditAdjustmentsWorkflow } from "./refresh-order-edit-adjustments"
 import { fieldsToRefreshOrderEdit } from "./utils/fields"
 
 /**
@@ -161,11 +160,5 @@ export const cancelBeginOrderEditWorkflow = createWorkflow(
         data: eventData,
       })
     )
-
-    refreshOrderEditAdjustmentsWorkflow.runAsStep({
-      input: {
-        order: order,
-      },
-    })
   }
 )
